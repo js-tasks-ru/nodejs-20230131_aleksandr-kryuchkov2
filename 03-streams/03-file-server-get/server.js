@@ -19,7 +19,7 @@ server.on('request', (req, res) => {
 
       stream.on('error', (error) => {
         if (error.code === 'ENOENT') {
-          if (error.path.slice(error.path.indexOf('files')).split('\\').length > 2) {
+          if (pathname.includes('/')) {
             res.statusCode = 400;
             res.end('Nested folders are not supported');
           } else {
