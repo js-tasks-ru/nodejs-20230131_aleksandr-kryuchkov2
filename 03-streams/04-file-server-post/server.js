@@ -20,7 +20,7 @@ server.on('request', (req, res) => {
   // то выкидываем ошибку и завершаем res.
   if (fs.existsSync(filepath)) {
     res.statusCode = 409;
-    res.end('Such file already exists');
+    return res.end('Such file already exists');
   }
 
   // Создаём файл на сервере
@@ -35,44 +35,41 @@ server.on('request', (req, res) => {
 
       // Обрабатываем ошибки
       limitedStream.on('error', (error) => {
-        console.log('errorlimitedStream: ', error);
         if (error.code === 'LIMIT_EXCEEDED') {
+          fs.unlinkSync(filepath);
           res.statusCode = 413;
-          res.end('File is too big');
+          return res.end('File is too big');
         }
       });
 
       outStream.on('error', (error) => {
-        console.log('error: ', error);
         if (error.code === 'ENOENT') {
           if (pathname.includes('/')) {
             res.statusCode = 400;
-            res.end('Nested folders are not supported');
+            return res.end('Nested folders are not supported');
           } else {
             res.statusCode = 404;
-            res.end('File not found');
+            return res.end('File not found');
           }
         } else {
           res.statusCode = 500;
-          res.end('Something wrong');
+          return res.end('Something wrong');
         }
       });
       req.on('aborted', () => {
         fs.unlinkSync(filepath);
         outStream.destroy();
+        limitedStream.destroy();
+        return res.end('Uploading is aborted');
       });
-
-
-
       outStream.on('end', () => {
-        res.statusCode = 200;
-        res.end('Everything is fine');
+        res.statusCode = 201;
+        return res.end('Everything is fine');
       });
-
       break;
     default:
       res.statusCode = 501;
-      res.end('Not implemented');
+      return res.end('Not implemented');
   }
 });
 
