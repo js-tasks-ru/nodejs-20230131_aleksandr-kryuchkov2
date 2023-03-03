@@ -62,7 +62,7 @@ server.on('request', (req, res) => {
         limitedStream.destroy();
         return res.end('Uploading is aborted');
       });
-      outStream.on('end', () => {
+      outStream.on('finish', () => {
         res.statusCode = 201;
         return res.end('Everything is fine');
       });
