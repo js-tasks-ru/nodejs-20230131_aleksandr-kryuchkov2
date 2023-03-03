@@ -1,6 +1,7 @@
 const url = require('url');
 const http = require('http');
 const path = require('path');
+const fs = require('fs');
 
 const server = new http.Server();
 
@@ -10,9 +11,30 @@ server.on('request', (req, res) => {
 
   const filepath = path.join(__dirname, 'files', pathname);
 
+  const stream = fs.createReadStream(filepath);
+
   switch (req.method) {
     case 'GET':
+      stream.pipe(res);
 
+      stream.on('error', (error) => {
+        if (error.code === 'ENOENT') {
+          if (pathname.includes('/')) {
+            res.statusCode = 400;
+            res.end('Nested folders are not supported');
+          } else {
+            res.statusCode = 404;
+            res.end('File not found');
+          }
+        } else {
+          res.statusCode = 500;
+          res.end('Common error');
+        }
+      });
+
+      req.on('aborted', () => {
+        stream.destroy();
+      });
       break;
 
     default:
